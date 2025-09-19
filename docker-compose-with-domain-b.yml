@@ -1,0 +1,52 @@
+version: "3.8"
+services:
+  backend:
+    build: ./backend
+    container_name: ep_backend
+    expose:
+      - "3001"
+    restart: unless-stopped
+    networks:
+      - epnet
+
+  frontend:
+    build: ./frontend
+    container_name: ep_frontend
+    expose:
+      - "80"
+    restart: unless-stopped
+    networks:
+      - epnet
+
+  nginx:
+    image: nginx:alpine
+    container_name: ep_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/certbot/www:/var/www/certbot
+      - ./nginx/certbot/conf:/etc/letsencrypt
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+    networks:
+      - epnet
+
+  certbot:
+    image: certbot/certbot
+    container_name: ep_certbot
+    volumes:
+      - ./nginx/certbot/www:/var/www/certbot
+      - ./nginx/certbot/conf:/etc/letsencrypt
+    entrypoint: /bin/sh -c
+    command: "while :; do sleep 12h & wait $${!}; certbot renew --webroot -w /var/www/certbot --quiet; done"
+    networks:
+      - epnet
+
+networks:
+  epnet:
+    driver: bridge
+

@@ -1,0 +1,25 @@
+version: "3.8"
+services:
+  backend:
+    build: ./backend
+    container_name: ep_backend
+    ports:
+      - "3001:3001"
+    restart: unless-stopped
+    networks:
+      - epnet
+
+  frontend:
+    build: ./frontend
+    container_name: ep_frontend
+    ports:
+      - "3000:80"   # host:container => browse http://<host>:3000
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - epnet
+
+networks:
+  epnet:
+    driver: bridge
